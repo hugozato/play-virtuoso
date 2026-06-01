@@ -288,3 +288,62 @@ export const getMyProfile = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     return await getProfile(context.userId);
   });
+
+export const updateProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        username: z.string().min(3).max(30).optional(),
+        avatar_url: z.string().url().optional().or(z.literal("")),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const profile = await getProfile(userId);
+
+    const updates: Record<string, unknown> = {};
+
+    if (data.avatar_url !== undefined) {
+      updates.avatar_url = data.avatar_url || null;
+    }
+
+    if (data.username !== undefined && data.username !== profile.username) {
+      if (profile.username_changed_at) {
+        const lastChange = new Date(profile.username_changed_at);
+        const oneYear = 365 * 24 * 60 * 60 * 1000;
+        if (Date.now() - lastChange.getTime() < oneYear) {
+          const nextDate = new Date(lastChange.getTime() + oneYear);
+          throw new Error(
+            `Você só pode trocar o nome novamente em ${nextDate.toLocaleDateString("pt-BR")}`,
+          );
+        }
+      }
+      updates.username = data.username;
+      updates.username_changed_at = new Date().toISOString();
+    }
+
+    if (Object.keys(updates).length === 0) return profile;
+
+    const { data: updated, error } = await supabaseAdmin
+      .from("profiles")
+      .update(updates)
+      .eq("id", userId)
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return updated;
+  });
+
+export const getLeaderboard = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .select("id, username, coins, plan, avatar_url")
+      .order("coins", { ascending: false })
+      .limit(50);
+    if (error) throw new Error(error.message);
+    return data;
+  });
