@@ -26,7 +26,7 @@ function CardView({ card, hidden }: { card?: Card; hidden?: boolean }) {
   );
 }
 
-export default function BlackjackPage() {
+function BlackjackPage() {
   const qc = useQueryClient();
   const play = useServerFn(playBlackjack);
   const [bet, setBet] = useState(100);
@@ -99,5 +99,3 @@ export default function BlackjackPage() {
     </main>
   );
 }
-
-export { BlackjackPage as component };
