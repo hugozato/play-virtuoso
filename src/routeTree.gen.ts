@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSlotRouteImport } from './routes/_authenticated/slot'
+import { Route as AuthenticatedPlansRouteImport } from './routes/_authenticated/plans'
 import { Route as AuthenticatedLobbyRouteImport } from './routes/_authenticated/lobby'
 import { Route as AuthenticatedBlackjackRouteImport } from './routes/_authenticated/blackjack'
 
@@ -35,6 +36,11 @@ const AuthenticatedSlotRoute = AuthenticatedSlotRouteImport.update({
   path: '/slot',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPlansRoute = AuthenticatedPlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedLobbyRoute = AuthenticatedLobbyRouteImport.update({
   id: '/lobby',
   path: '/lobby',
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/blackjack': typeof AuthenticatedBlackjackRoute
   '/lobby': typeof AuthenticatedLobbyRoute
+  '/plans': typeof AuthenticatedPlansRoute
   '/slot': typeof AuthenticatedSlotRoute
 }
 export interface FileRoutesByTo {
@@ -58,6 +65,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/blackjack': typeof AuthenticatedBlackjackRoute
   '/lobby': typeof AuthenticatedLobbyRoute
+  '/plans': typeof AuthenticatedPlansRoute
   '/slot': typeof AuthenticatedSlotRoute
 }
 export interface FileRoutesById {
@@ -67,13 +75,14 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_authenticated/blackjack': typeof AuthenticatedBlackjackRoute
   '/_authenticated/lobby': typeof AuthenticatedLobbyRoute
+  '/_authenticated/plans': typeof AuthenticatedPlansRoute
   '/_authenticated/slot': typeof AuthenticatedSlotRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/blackjack' | '/lobby' | '/slot'
+  fullPaths: '/' | '/login' | '/blackjack' | '/lobby' | '/plans' | '/slot'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/blackjack' | '/lobby' | '/slot'
+  to: '/' | '/login' | '/blackjack' | '/lobby' | '/plans' | '/slot'
   id:
     | '__root__'
     | '/'
@@ -81,6 +90,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_authenticated/blackjack'
     | '/_authenticated/lobby'
+    | '/_authenticated/plans'
     | '/_authenticated/slot'
   fileRoutesById: FileRoutesById
 }
@@ -120,6 +130,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSlotRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/plans': {
+      id: '/_authenticated/plans'
+      path: '/plans'
+      fullPath: '/plans'
+      preLoaderRoute: typeof AuthenticatedPlansRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/lobby': {
       id: '/_authenticated/lobby'
       path: '/lobby'
@@ -140,12 +157,14 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedBlackjackRoute: typeof AuthenticatedBlackjackRoute
   AuthenticatedLobbyRoute: typeof AuthenticatedLobbyRoute
+  AuthenticatedPlansRoute: typeof AuthenticatedPlansRoute
   AuthenticatedSlotRoute: typeof AuthenticatedSlotRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBlackjackRoute: AuthenticatedBlackjackRoute,
   AuthenticatedLobbyRoute: AuthenticatedLobbyRoute,
+  AuthenticatedPlansRoute: AuthenticatedPlansRoute,
   AuthenticatedSlotRoute: AuthenticatedSlotRoute,
 }
 
@@ -161,3 +180,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
