@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSlotRouteImport } from './routes/_authenticated/slot'
 import { Route as AuthenticatedLobbyRouteImport } from './routes/_authenticated/lobby'
+import { Route as AuthenticatedBlackjackRouteImport } from './routes/_authenticated/blackjack'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -39,16 +40,23 @@ const AuthenticatedLobbyRoute = AuthenticatedLobbyRouteImport.update({
   path: '/lobby',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedBlackjackRoute = AuthenticatedBlackjackRouteImport.update({
+  id: '/blackjack',
+  path: '/blackjack',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/blackjack': typeof AuthenticatedBlackjackRoute
   '/lobby': typeof AuthenticatedLobbyRoute
   '/slot': typeof AuthenticatedSlotRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/blackjack': typeof AuthenticatedBlackjackRoute
   '/lobby': typeof AuthenticatedLobbyRoute
   '/slot': typeof AuthenticatedSlotRoute
 }
@@ -57,19 +65,21 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authenticated/blackjack': typeof AuthenticatedBlackjackRoute
   '/_authenticated/lobby': typeof AuthenticatedLobbyRoute
   '/_authenticated/slot': typeof AuthenticatedSlotRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/lobby' | '/slot'
+  fullPaths: '/' | '/login' | '/blackjack' | '/lobby' | '/slot'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/lobby' | '/slot'
+  to: '/' | '/login' | '/blackjack' | '/lobby' | '/slot'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/login'
+    | '/_authenticated/blackjack'
     | '/_authenticated/lobby'
     | '/_authenticated/slot'
   fileRoutesById: FileRoutesById
@@ -117,15 +127,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLobbyRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/blackjack': {
+      id: '/_authenticated/blackjack'
+      path: '/blackjack'
+      fullPath: '/blackjack'
+      preLoaderRoute: typeof AuthenticatedBlackjackRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedBlackjackRoute: typeof AuthenticatedBlackjackRoute
   AuthenticatedLobbyRoute: typeof AuthenticatedLobbyRoute
   AuthenticatedSlotRoute: typeof AuthenticatedSlotRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedBlackjackRoute: AuthenticatedBlackjackRoute,
   AuthenticatedLobbyRoute: AuthenticatedLobbyRoute,
   AuthenticatedSlotRoute: AuthenticatedSlotRoute,
 }
