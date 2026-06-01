@@ -156,7 +156,7 @@ type BJState = { deck: Card[]; player: Card[]; dealer: Card[]; bet: number };
 async function saveBJ(userId: string, state: BJState | null) {
   const { error } = await supabaseAdmin
     .from("profiles")
-    .update({ active_blackjack: state as unknown as object | null })
+    .update({ active_blackjack: state as never })
     .eq("id", userId);
   if (error) throw new Error(error.message);
 }
