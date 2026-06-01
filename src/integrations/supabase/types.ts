@@ -46,6 +46,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active_blackjack: Json | null
           coins: number
           created_at: string
           id: string
@@ -55,6 +56,7 @@ export type Database = {
           username: string
         }
         Insert: {
+          active_blackjack?: Json | null
           coins?: number
           created_at?: string
           id: string
@@ -64,6 +66,7 @@ export type Database = {
           username: string
         }
         Update: {
+          active_blackjack?: Json | null
           coins?: number
           created_at?: string
           id?: string
