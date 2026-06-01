@@ -14,7 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      coin_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          game: string | null
+          id: string
+          kind: string
+          meta: Json | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          game?: string | null
+          id?: string
+          kind: string
+          meta?: Json | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          game?: string | null
+          id?: string
+          kind?: string
+          meta?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          coins: number
+          created_at: string
+          id: string
+          last_daily_bonus_at: string | null
+          plan: Database["public"]["Enums"]["plan_tier"]
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          coins?: number
+          created_at?: string
+          id: string
+          last_daily_bonus_at?: string | null
+          plan?: Database["public"]["Enums"]["plan_tier"]
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          coins?: number
+          created_at?: string
+          id?: string
+          last_daily_bonus_at?: string | null
+          plan?: Database["public"]["Enums"]["plan_tier"]
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +82,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      plan_tier: "free" | "bronze" | "silver" | "gold"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +209,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      plan_tier: ["free", "bronze", "silver", "gold"],
+    },
   },
 } as const
