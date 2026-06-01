@@ -27,7 +27,8 @@ async function adjustCoins(
   delta: number,
   kind: string,
   game?: string,
-  meta?: Record<string, unknown>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  meta?: any,
 ) {
   const profile = await getProfile(userId);
   const newBalance = Number(profile.coins) + delta;
