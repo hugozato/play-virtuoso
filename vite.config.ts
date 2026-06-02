@@ -6,10 +6,23 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+const supabaseUrl = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL ?? "https://lticjqrzndzozscvysvb.supabase.co";
+const supabasePublishableKey =
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
+  process.env.SUPABASE_PUBLISHABLE_KEY ??
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx0aWNqcXJ6bmR6b3pzY3Z5c3ZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMzg2NTgsImV4cCI6MjA5NTkxNDY1OH0.jr3VueyxUh5Q7WTk-Ygq8tECpkcIKGYPFtB7Z48OtMs";
+
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+  },
+  vite: {
+    define: {
+      "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(supabaseUrl),
+      "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(supabasePublishableKey),
+      "import.meta.env.VITE_SUPABASE_PROJECT_ID": JSON.stringify("lticjqrzndzozscvysvb"),
+    },
   },
 });
