@@ -14,8 +14,10 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedStoreRouteImport } from './routes/_authenticated/store'
 import { Route as AuthenticatedSlotRouteImport } from './routes/_authenticated/slot'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPlansRouteImport } from './routes/_authenticated/plans'
 import { Route as AuthenticatedLobbyRouteImport } from './routes/_authenticated/lobby'
+import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
 import { Route as AuthenticatedBlackjackRouteImport } from './routes/_authenticated/blackjack'
 
 const LoginRoute = LoginRouteImport.update({
@@ -42,6 +44,11 @@ const AuthenticatedSlotRoute = AuthenticatedSlotRouteImport.update({
   path: '/slot',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPlansRoute = AuthenticatedPlansRouteImport.update({
   id: '/plans',
   path: '/plans',
@@ -52,6 +59,12 @@ const AuthenticatedLobbyRoute = AuthenticatedLobbyRouteImport.update({
   path: '/lobby',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLeaderboardRoute =
+  AuthenticatedLeaderboardRouteImport.update({
+    id: '/leaderboard',
+    path: '/leaderboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedBlackjackRoute = AuthenticatedBlackjackRouteImport.update({
   id: '/blackjack',
   path: '/blackjack',
@@ -62,8 +75,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/blackjack': typeof AuthenticatedBlackjackRoute
+  '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/lobby': typeof AuthenticatedLobbyRoute
   '/plans': typeof AuthenticatedPlansRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/slot': typeof AuthenticatedSlotRoute
   '/store': typeof AuthenticatedStoreRoute
 }
@@ -71,8 +86,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/blackjack': typeof AuthenticatedBlackjackRoute
+  '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/lobby': typeof AuthenticatedLobbyRoute
   '/plans': typeof AuthenticatedPlansRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/slot': typeof AuthenticatedSlotRoute
   '/store': typeof AuthenticatedStoreRoute
 }
@@ -82,8 +99,10 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/blackjack': typeof AuthenticatedBlackjackRoute
+  '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/_authenticated/lobby': typeof AuthenticatedLobbyRoute
   '/_authenticated/plans': typeof AuthenticatedPlansRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/slot': typeof AuthenticatedSlotRoute
   '/_authenticated/store': typeof AuthenticatedStoreRoute
 }
@@ -93,20 +112,33 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/blackjack'
+    | '/leaderboard'
     | '/lobby'
     | '/plans'
+    | '/profile'
     | '/slot'
     | '/store'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/blackjack' | '/lobby' | '/plans' | '/slot' | '/store'
+  to:
+    | '/'
+    | '/login'
+    | '/blackjack'
+    | '/leaderboard'
+    | '/lobby'
+    | '/plans'
+    | '/profile'
+    | '/slot'
+    | '/store'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/login'
     | '/_authenticated/blackjack'
+    | '/_authenticated/leaderboard'
     | '/_authenticated/lobby'
     | '/_authenticated/plans'
+    | '/_authenticated/profile'
     | '/_authenticated/slot'
     | '/_authenticated/store'
   fileRoutesById: FileRoutesById
@@ -154,6 +186,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSlotRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/plans': {
       id: '/_authenticated/plans'
       path: '/plans'
@@ -168,6 +207,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLobbyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/leaderboard': {
+      id: '/_authenticated/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof AuthenticatedLeaderboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/blackjack': {
       id: '/_authenticated/blackjack'
       path: '/blackjack'
@@ -180,16 +226,20 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBlackjackRoute: typeof AuthenticatedBlackjackRoute
+  AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
   AuthenticatedLobbyRoute: typeof AuthenticatedLobbyRoute
   AuthenticatedPlansRoute: typeof AuthenticatedPlansRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSlotRoute: typeof AuthenticatedSlotRoute
   AuthenticatedStoreRoute: typeof AuthenticatedStoreRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBlackjackRoute: AuthenticatedBlackjackRoute,
+  AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
   AuthenticatedLobbyRoute: AuthenticatedLobbyRoute,
   AuthenticatedPlansRoute: AuthenticatedPlansRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSlotRoute: AuthenticatedSlotRoute,
   AuthenticatedStoreRoute: AuthenticatedStoreRoute,
 }

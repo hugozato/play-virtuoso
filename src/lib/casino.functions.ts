@@ -328,7 +328,7 @@ export const updateProfile = createServerFn({ method: "POST" })
 
     const { data: updated, error } = await supabaseAdmin
       .from("profiles")
-      .update(updates)
+      .update(updates as never)
       .eq("id", userId)
       .select("*")
       .single();
