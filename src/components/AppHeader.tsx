@@ -1,10 +1,11 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Coins, LogOut, Sparkles } from "lucide-react";
+import { Coins, LogOut, Sparkles, User } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyProfile } from "@/lib/casino.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const planLabels: Record<string, string> = {
   free: "Gratuito",
@@ -37,6 +38,7 @@ export function AppHeader() {
 
         <nav className="hidden md:flex items-center gap-6 text-sm">
           <Link to="/lobby" className="text-muted-foreground hover:text-foreground transition">Lobby</Link>
+          <Link to="/leaderboard" className="text-muted-foreground hover:text-foreground transition">Ranking</Link>
           <Link to="/plans" className="text-muted-foreground hover:text-foreground transition">Planos</Link>
           <Link to="/store" className="text-muted-foreground hover:text-foreground transition">Loja</Link>
         </nav>
@@ -53,6 +55,14 @@ export function AppHeader() {
                 <Coins className="h-4 w-4 text-[color:var(--gold)]" />
                 <span className="font-bold tabular-nums">{Number(data.coins).toLocaleString("pt-BR")}</span>
               </div>
+              <Link to="/profile" title="Meu perfil">
+                <Avatar className="h-9 w-9 ring-2 ring-border hover:ring-primary transition">
+                  <AvatarImage src={data.avatar_url || undefined} />
+                  <AvatarFallback className="bg-secondary text-xs">
+                    <User className="h-4 w-4" />
+                  </AvatarFallback>
+                </Avatar>
+              </Link>
             </>
           )}
           <Button
