@@ -47,7 +47,6 @@ export type Database = {
       profiles: {
         Row: {
           active_blackjack: Json | null
-          avatar_url: string | null
           coins: number
           created_at: string
           id: string
@@ -55,11 +54,9 @@ export type Database = {
           plan: Database["public"]["Enums"]["plan_tier"]
           updated_at: string
           username: string
-          username_changed_at: string | null
         }
         Insert: {
           active_blackjack?: Json | null
-          avatar_url?: string | null
           coins?: number
           created_at?: string
           id: string
@@ -67,11 +64,9 @@ export type Database = {
           plan?: Database["public"]["Enums"]["plan_tier"]
           updated_at?: string
           username: string
-          username_changed_at?: string | null
         }
         Update: {
           active_blackjack?: Json | null
-          avatar_url?: string | null
           coins?: number
           created_at?: string
           id?: string
@@ -79,7 +74,6 @@ export type Database = {
           plan?: Database["public"]["Enums"]["plan_tier"]
           updated_at?: string
           username?: string
-          username_changed_at?: string | null
         }
         Relationships: []
       }
