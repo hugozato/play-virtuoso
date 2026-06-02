@@ -17,6 +17,7 @@ import { Route as AuthenticatedSlotRouteImport } from './routes/_authenticated/s
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPlansRouteImport } from './routes/_authenticated/plans'
 import { Route as AuthenticatedLobbyRouteImport } from './routes/_authenticated/lobby'
+import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
 import { Route as AuthenticatedBlackjackRouteImport } from './routes/_authenticated/blackjack'
 
 const LoginRoute = LoginRouteImport.update({
@@ -58,6 +59,12 @@ const AuthenticatedLobbyRoute = AuthenticatedLobbyRouteImport.update({
   path: '/lobby',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLeaderboardRoute =
+  AuthenticatedLeaderboardRouteImport.update({
+    id: '/leaderboard',
+    path: '/leaderboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedBlackjackRoute = AuthenticatedBlackjackRouteImport.update({
   id: '/blackjack',
   path: '/blackjack',
@@ -68,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/blackjack': typeof AuthenticatedBlackjackRoute
+  '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/lobby': typeof AuthenticatedLobbyRoute
   '/plans': typeof AuthenticatedPlansRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -78,6 +86,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/blackjack': typeof AuthenticatedBlackjackRoute
+  '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/lobby': typeof AuthenticatedLobbyRoute
   '/plans': typeof AuthenticatedPlansRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -90,6 +99,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/blackjack': typeof AuthenticatedBlackjackRoute
+  '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/_authenticated/lobby': typeof AuthenticatedLobbyRoute
   '/_authenticated/plans': typeof AuthenticatedPlansRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
@@ -102,6 +112,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/blackjack'
+    | '/leaderboard'
     | '/lobby'
     | '/plans'
     | '/profile'
@@ -112,6 +123,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/blackjack'
+    | '/leaderboard'
     | '/lobby'
     | '/plans'
     | '/profile'
@@ -123,6 +135,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/login'
     | '/_authenticated/blackjack'
+    | '/_authenticated/leaderboard'
     | '/_authenticated/lobby'
     | '/_authenticated/plans'
     | '/_authenticated/profile'
@@ -194,6 +207,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLobbyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/leaderboard': {
+      id: '/_authenticated/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof AuthenticatedLeaderboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/blackjack': {
       id: '/_authenticated/blackjack'
       path: '/blackjack'
@@ -206,6 +226,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBlackjackRoute: typeof AuthenticatedBlackjackRoute
+  AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
   AuthenticatedLobbyRoute: typeof AuthenticatedLobbyRoute
   AuthenticatedPlansRoute: typeof AuthenticatedPlansRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
@@ -215,6 +236,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBlackjackRoute: AuthenticatedBlackjackRoute,
+  AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
   AuthenticatedLobbyRoute: AuthenticatedLobbyRoute,
   AuthenticatedPlansRoute: AuthenticatedPlansRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
