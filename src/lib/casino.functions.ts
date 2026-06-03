@@ -279,6 +279,7 @@ function publicCrashState(state: CrashState) {
     bet: state.bet,
     startedAt: state.startedAt,
     autoCashout: state.autoCashout,
+    crashPoint: state.crashPoint,
     serverSeedHash: createSeedHash(state.serverSeed),
     clientSeed: state.clientSeed,
     growth: CRASH_GROWTH,
