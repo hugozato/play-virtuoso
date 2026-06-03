@@ -25,6 +25,7 @@ type Active = {
   bet: number;
   startedAt: number;
   autoCashout: number | null;
+  crashPoint: number;
   serverSeedHash: string;
   clientSeed: string;
   growth: number;
@@ -107,19 +108,20 @@ function CrashPage() {
     const tick = () => {
       const elapsed = Date.now() - active.startedAt;
       const m = Math.max(1, Math.pow(Math.E, GROWTH * elapsed));
+      // crash hit — resolve as loss automatically
+      if (!cashedRef.current && m >= active.crashPoint) {
+        cashedRef.current = true;
+        setMult(active.crashPoint);
+        cashoutMutation.mutate();
+        return;
+      }
       setMult(m);
-      // auto-cashout
+      // auto-cashout target reached before crash
       if (
         !cashedRef.current &&
         active.autoCashout &&
         m >= active.autoCashout
       ) {
-        cashedRef.current = true;
-        cashoutMutation.mutate();
-        return;
-      }
-      // safety: after 60s force resolve (server reveals bust if past crashPoint)
-      if (!cashedRef.current && elapsed > 60_000) {
         cashedRef.current = true;
         cashoutMutation.mutate();
         return;
