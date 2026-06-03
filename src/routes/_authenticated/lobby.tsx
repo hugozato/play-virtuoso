@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Gift, Dices, Spade, Store, Crown } from "lucide-react";
+import { Gift, Dices, Spade, Store, Crown, Rocket } from "lucide-react";
 import { claimDailyBonus, getMyProfile } from "@/lib/casino.functions";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -71,6 +71,9 @@ function Lobby() {
         </GameCard>
         <GameCard to="/blackjack" icon={Spade} title="Blackjack 21" tag="Cartas" gradient="from-purple-600/30 to-pink-500/30">
           Bata o dealer sem estourar. Blackjack natural paga 2.5×.
+        </GameCard>
+        <GameCard to="/crash" icon={Rocket} title="Crash 🚀" tag="VIP Bronze+" gradient="from-emerald-500/30 to-accent/30">
+          Saque antes do foguete explodir. Multiplicadores até 1000×. Exclusivo VIP.
         </GameCard>
       </div>
 

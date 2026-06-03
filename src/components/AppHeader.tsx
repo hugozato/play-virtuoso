@@ -38,6 +38,7 @@ export function AppHeader() {
 
         <nav className="hidden md:flex items-center gap-6 text-sm">
           <Link to="/lobby" className="text-muted-foreground hover:text-foreground transition">Lobby</Link>
+          <Link to="/crash" className="text-muted-foreground hover:text-foreground transition">Crash</Link>
           <Link to="/leaderboard" className="text-muted-foreground hover:text-foreground transition">Ranking</Link>
           <Link to="/plans" className="text-muted-foreground hover:text-foreground transition">Planos</Link>
           <Link to="/store" className="text-muted-foreground hover:text-foreground transition">Loja</Link>

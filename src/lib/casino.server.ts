@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { createHmac, randomBytes } from "node:crypto";
 
 export const PLANS = {
   free: { price: 0, monthlyCoins: 0, dailyBonus: 50 },
@@ -10,6 +11,46 @@ export const PLANS = {
 export type Plan = keyof typeof PLANS;
 export type Card = { rank: string; suit: string };
 export type BJState = { deck: Card[]; player: Card[]; dealer: Card[]; bet: number };
+export type CrashState = {
+  serverSeed: string;
+  clientSeed: string;
+  crashPoint: number;
+  bet: number;
+  startedAt: number;
+  autoCashout: number | null;
+};
+
+export const CRASH_GROWTH = 0.00006;
+
+export function generateCrashPoint(serverSeed: string, clientSeed: string): number {
+  const hash = createHmac("sha256", serverSeed).update(clientSeed).digest("hex");
+  const hex = hash.slice(0, 8);
+  const int = parseInt(hex, 16);
+  // 3% house edge: 3% of rounds bust at 1.00x
+  if (int % 33 === 0) return 1.0;
+  const e = 2 ** 32;
+  const cp = Math.max(1, (100 * e - int) / (e - int)) / 100;
+  return Math.floor(cp * 100) / 100;
+}
+
+export function multiplierAt(elapsedMs: number): number {
+  return Math.max(1, Math.pow(Math.E, CRASH_GROWTH * elapsedMs));
+}
+
+export function newCrashSeeds() {
+  return {
+    serverSeed: randomBytes(16).toString("hex"),
+    clientSeed: randomBytes(8).toString("hex"),
+  };
+}
+
+export async function saveCrash(userId: string, state: CrashState | null) {
+  const { error } = await supabaseAdmin
+    .from("profiles")
+    .update({ active_crash: state as never })
+    .eq("id", userId);
+  if (error) throw new Error(error.message);
+}
 
 const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 const SUITS = ["♠", "♥", "♦", "♣"];

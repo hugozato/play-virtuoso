@@ -14,6 +14,14 @@ import {
   type Card,
   type Plan,
 } from "./casino.server";
+import {
+  CRASH_GROWTH,
+  generateCrashPoint,
+  multiplierAt,
+  newCrashSeeds,
+  saveCrash,
+  type CrashState,
+} from "./casino.server";
 
 export const claimDailyBonus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -260,4 +268,119 @@ export const getLeaderboard = createServerFn({ method: "GET" })
       .limit(50);
     if (error) throw new Error(error.message);
     return data;
+  });
+
+// ============ CRASH GAME (VIP Bronze+) ============
+
+const VIP_PLANS = new Set(["bronze", "silver", "gold"]);
+
+function publicCrashState(state: CrashState) {
+  return {
+    bet: state.bet,
+    startedAt: state.startedAt,
+    autoCashout: state.autoCashout,
+    serverSeedHash: createSeedHash(state.serverSeed),
+    clientSeed: state.clientSeed,
+    growth: CRASH_GROWTH,
+  };
+}
+
+function createSeedHash(seed: string): string {
+  // Reveal a hash up-front for provably-fair; full seed shown after settlement.
+  // Lightweight hash via Web Crypto-free fallback: simple djb2-ish hex chunk.
+  // (Seed itself is 32 hex chars; this just commits to it for the client.)
+  let h = 5381;
+  for (let i = 0; i < seed.length; i++) h = ((h << 5) + h + seed.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(16).padStart(8, "0");
+}
+
+export const startCrash = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        bet: z.number().int().min(50).max(10000),
+        autoCashout: z.number().min(1.01).max(1000).nullable().optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const profile = await getProfile(userId);
+    if (!VIP_PLANS.has(profile.plan as string)) {
+      throw new Error("Apenas assinantes VIP (Bronze+) podem jogar Crash.");
+    }
+    if (profile.active_crash) {
+      throw new Error("Você já tem uma rodada em andamento.");
+    }
+    await adjustCoins(userId, -data.bet, "crash_bet", "crash");
+    const { serverSeed, clientSeed } = newCrashSeeds();
+    const crashPoint = generateCrashPoint(serverSeed, clientSeed);
+    const state: CrashState = {
+      serverSeed,
+      clientSeed,
+      crashPoint,
+      bet: data.bet,
+      startedAt: Date.now(),
+      autoCashout: data.autoCashout ?? null,
+    };
+    await saveCrash(userId, state);
+    const balance = (await getProfile(userId)).coins as number;
+    return { ...publicCrashState(state), balance };
+  });
+
+export const cashoutCrash = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const profile = await getProfile(userId);
+    const state = profile.active_crash as unknown as CrashState | null;
+    if (!state) throw new Error("Nenhuma rodada ativa.");
+    const elapsed = Date.now() - state.startedAt;
+    const currentMult = multiplierAt(elapsed);
+    let multiplier = currentMult;
+    let result: "win" | "crashed" = "crashed";
+    let win = 0;
+    // Honor auto-cashout target if set & reached before crash
+    if (
+      state.autoCashout &&
+      state.autoCashout <= state.crashPoint &&
+      currentMult >= state.autoCashout
+    ) {
+      multiplier = state.autoCashout;
+      result = "win";
+      win = Math.floor(state.bet * multiplier);
+    } else if (currentMult < state.crashPoint) {
+      result = "win";
+      win = Math.floor(state.bet * currentMult);
+    } else {
+      multiplier = state.crashPoint;
+    }
+    let balance = Number(profile.coins);
+    if (win > 0) {
+      balance = await adjustCoins(userId, win, "crash_win", "crash", {
+        multiplier,
+        crashPoint: state.crashPoint,
+      });
+    }
+    await saveCrash(userId, null);
+    return {
+      result,
+      multiplier: Math.floor(multiplier * 100) / 100,
+      crashPoint: state.crashPoint,
+      serverSeed: state.serverSeed,
+      clientSeed: state.clientSeed,
+      bet: state.bet,
+      win,
+      balance,
+    };
+  });
+
+export const getActiveCrash = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const profile = await getProfile(context.userId);
+    const state = profile.active_crash as unknown as CrashState | null;
+    if (!state) return null;
+    return publicCrashState(state);
   });
