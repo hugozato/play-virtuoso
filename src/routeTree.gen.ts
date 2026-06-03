@@ -18,6 +18,7 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedPlansRouteImport } from './routes/_authenticated/plans'
 import { Route as AuthenticatedLobbyRouteImport } from './routes/_authenticated/lobby'
 import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
+import { Route as AuthenticatedCrashRouteImport } from './routes/_authenticated/crash'
 import { Route as AuthenticatedBlackjackRouteImport } from './routes/_authenticated/blackjack'
 
 const LoginRoute = LoginRouteImport.update({
@@ -65,6 +66,11 @@ const AuthenticatedLeaderboardRoute =
     path: '/leaderboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCrashRoute = AuthenticatedCrashRouteImport.update({
+  id: '/crash',
+  path: '/crash',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedBlackjackRoute = AuthenticatedBlackjackRouteImport.update({
   id: '/blackjack',
   path: '/blackjack',
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/blackjack': typeof AuthenticatedBlackjackRoute
+  '/crash': typeof AuthenticatedCrashRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/lobby': typeof AuthenticatedLobbyRoute
   '/plans': typeof AuthenticatedPlansRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/blackjack': typeof AuthenticatedBlackjackRoute
+  '/crash': typeof AuthenticatedCrashRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/lobby': typeof AuthenticatedLobbyRoute
   '/plans': typeof AuthenticatedPlansRoute
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/blackjack': typeof AuthenticatedBlackjackRoute
+  '/_authenticated/crash': typeof AuthenticatedCrashRoute
   '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/_authenticated/lobby': typeof AuthenticatedLobbyRoute
   '/_authenticated/plans': typeof AuthenticatedPlansRoute
@@ -112,6 +121,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/blackjack'
+    | '/crash'
     | '/leaderboard'
     | '/lobby'
     | '/plans'
@@ -123,6 +133,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/blackjack'
+    | '/crash'
     | '/leaderboard'
     | '/lobby'
     | '/plans'
@@ -135,6 +146,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/login'
     | '/_authenticated/blackjack'
+    | '/_authenticated/crash'
     | '/_authenticated/leaderboard'
     | '/_authenticated/lobby'
     | '/_authenticated/plans'
@@ -214,6 +226,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLeaderboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/crash': {
+      id: '/_authenticated/crash'
+      path: '/crash'
+      fullPath: '/crash'
+      preLoaderRoute: typeof AuthenticatedCrashRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/blackjack': {
       id: '/_authenticated/blackjack'
       path: '/blackjack'
@@ -226,6 +245,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBlackjackRoute: typeof AuthenticatedBlackjackRoute
+  AuthenticatedCrashRoute: typeof AuthenticatedCrashRoute
   AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
   AuthenticatedLobbyRoute: typeof AuthenticatedLobbyRoute
   AuthenticatedPlansRoute: typeof AuthenticatedPlansRoute
@@ -236,6 +256,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBlackjackRoute: AuthenticatedBlackjackRoute,
+  AuthenticatedCrashRoute: AuthenticatedCrashRoute,
   AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
   AuthenticatedLobbyRoute: AuthenticatedLobbyRoute,
   AuthenticatedPlansRoute: AuthenticatedPlansRoute,
@@ -255,3 +276,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
