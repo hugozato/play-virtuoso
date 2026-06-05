@@ -236,7 +236,7 @@ function CrashPage() {
             <Input
               type="number"
               min={50}
-              max={10000}
+              max={1000000}
               value={bet}
               disabled={running}
               onChange={(e) => setBet(Math.max(50, Number(e.target.value) || 50))}
