@@ -236,7 +236,6 @@ function CrashPage() {
             <Input
               type="number"
               min={50}
-              max={1000000}
               value={bet}
               disabled={running}
               onChange={(e) => setBet(Math.max(50, Number(e.target.value) || 50))}
@@ -255,6 +254,15 @@ function CrashPage() {
                   {b}
                 </button>
               ))}
+              <button
+                disabled={running || !profile}
+                onClick={() => setBet(Math.max(50, (profile?.coins as number) || 0))}
+                className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition ${
+                  bet === (profile?.coins as number) ? "bg-primary border-primary" : "border-border hover:border-primary/50"
+                } disabled:opacity-50`}
+              >
+                MAX
+              </button>
             </div>
           </div>
 
