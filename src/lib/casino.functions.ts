@@ -300,7 +300,7 @@ export const startCrash = createServerFn({ method: "POST" })
   .inputValidator((data) =>
     z
       .object({
-        bet: z.number().int().min(50).max(1_000_000),
+        bet: z.number().int().min(50),
         autoCashout: z.number().min(1.01).max(1000).nullable().optional(),
       })
       .parse(data),
