@@ -1,11 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getMyProfile, spinSlot } from "@/lib/casino.functions";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Zap, Coins } from "lucide-react";
+import { Zap, Coins, Play, X } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/slot")({
   head: () => ({ meta: [{ title: "Fortune Tiger — Luxe Casino" }] }),
@@ -13,11 +19,17 @@ export const Route = createFileRoute("/_authenticated/slot")({
 });
 
 const SYMBOLS = ["🍊", "🪙", "🏮", "🧧", "💰", "🐯"];
-const EMPTY_GRID: string[][] = [
-  ["🍊", "🪙", "🏮"],
-  ["🧧", "🐯", "💰"],
-  ["🪙", "🏮", "🧧"],
-];
+const CELL = 88; // px per symbol cell
+const REEL_PADDING = 18; // extra random symbols above the final 3 (longer = more spin)
+
+function randomSymbol() {
+  return SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+}
+function buildReel(finalCol: string[]) {
+  // strip layout (top -> bottom): [padding randoms..., final[0], final[1], final[2]]
+  const pad = Array.from({ length: REEL_PADDING }, randomSymbol);
+  return [...pad, ...finalCol];
+}
 
 type SpinResult = Awaited<ReturnType<typeof spinSlot>>;
 
@@ -29,61 +41,75 @@ function SlotPage() {
 
   const [bet, setBet] = useState(50);
   const [turbo, setTurbo] = useState(false);
-  const [grid, setGrid] = useState<string[][]>(EMPTY_GRID);
-  const [reelSpinning, setReelSpinning] = useState<boolean[]>([false, false, false]);
+  // Each column: array of symbols rendered as a vertical strip
+  const initialReels = useMemo<string[][]>(
+    () => [0, 1, 2].map(() => buildReel([randomSymbol(), randomSymbol(), randomSymbol()])),
+    [],
+  );
+  const [reels, setReels] = useState<string[][]>(initialReels);
+  // offset (px) for each column transform
+  const [offsets, setOffsets] = useState<number[]>([0, 0, 0]);
+  const [durations, setDurations] = useState<number[]>([0, 0, 0]);
+  const [columnSpinning, setColumnSpinning] = useState<boolean[]>([false, false, false]);
   const [winningCells, setWinningCells] = useState<Set<string>>(new Set());
   const [lastResult, setLastResult] = useState<SpinResult | null>(null);
   const [bonusFlash, setBonusFlash] = useState(false);
-  const tickRef = useRef<number | null>(null);
+
+  // Auto-spin
+  const [autoOpen, setAutoOpen] = useState(false);
+  const [autoRemaining, setAutoRemaining] = useState(0);
+  const autoRemainingRef = useRef(0);
+  const stopAutoRef = useRef(false);
 
   const mutation = useMutation({
     mutationFn: (b: number) => spin({ data: { bet: b } }),
     onSuccess: (r) => animateSpin(r),
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      stopAutoRef.current = true;
+      autoRemainingRef.current = 0;
+      setAutoRemaining(0);
+      setColumnSpinning([false, false, false]);
+      toast.error(e.message);
+    },
   });
 
   function animateSpin(r: SpinResult) {
     setWinningCells(new Set());
     setLastResult(null);
-    setReelSpinning([true, true, true]);
-    // animate each column with a random symbol cycle
-    const tickMs = turbo ? 40 : 80;
-    const stopTimes = turbo ? [300, 500, 700] : [700, 1100, 1500];
-    const start = Date.now();
 
-    if (tickRef.current) window.clearInterval(tickRef.current);
-    tickRef.current = window.setInterval(() => {
-      setGrid((g) =>
-        g.map((row, ri) =>
-          row.map((cell, ci) => {
-            // only spinning columns get scrambled
-            return reelSpinningRef.current[ci]
-              ? SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]
-              : cell;
-          }),
-        ),
-      );
-    }, tickMs);
+    // Build the reels for this spin: for each column build a strip ending in the 3 final symbols
+    const newReels: string[][] = [0, 1, 2].map((c) =>
+      buildReel([r.grid[0][c], r.grid[1][c], r.grid[2][c]]),
+    );
+    setReels(newReels);
+    // Reset strips to the top (no transition), then trigger animation
+    setDurations([0, 0, 0]);
+    setOffsets([0, 0, 0]);
+    setColumnSpinning([true, true, true]);
 
-    stopTimes.forEach((t, colIdx) => {
-      setTimeout(() => {
-        setReelSpinning((s) => {
-          const next = [...s];
-          next[colIdx] = false;
-          return next;
-        });
-        // lock in the final column
-        setGrid((g) =>
-          g.map((row, ri) => row.map((cell, ci) => (ci === colIdx ? r.grid[ri][ci] : cell))),
-        );
-      }, t);
+    // Per-column spin duration (ms)
+    const colDurations = turbo ? [600, 800, 1000] : [1400, 1900, 2400];
+    // The strip should end with final[0..2] visible in rows 0..2.
+    // Strip length = REEL_PADDING + 3; we translate up by REEL_PADDING * CELL.
+    const targetOffset = -REEL_PADDING * CELL;
+
+    requestAnimationFrame(() => {
+      setDurations(colDurations);
+      setOffsets([targetOffset, targetOffset, targetOffset]);
     });
 
-    const totalTime = stopTimes[stopTimes.length - 1] + 200;
+    colDurations.forEach((d, idx) => {
+      setTimeout(() => {
+        setColumnSpinning((s) => {
+          const n = [...s];
+          n[idx] = false;
+          return n;
+        });
+      }, d);
+    });
+
+    const total = Math.max(...colDurations) + 80;
     setTimeout(() => {
-      if (tickRef.current) window.clearInterval(tickRef.current);
-      setGrid(r.grid);
-      // collect winning cells
       const cells = new Set<string>();
       r.wins.forEach((w) => w.cells.forEach(([rr, cc]) => cells.add(`${rr}-${cc}`)));
       setWinningCells(cells);
@@ -92,26 +118,49 @@ function SlotPage() {
       if (r.bonusTriggered) {
         setBonusFlash(true);
         setTimeout(() => setBonusFlash(false), 2200);
-        toast.success(`🎉 BÔNUS DO TIGRE x${r.bonusMultiplier}!`, { duration: 3000 });
+        toast.success(`🎉 BÔNUS DO TIGRE x${r.bonusMultiplier}!`, { duration: 2500 });
       }
       if (r.win > 0) {
         toast.success(`Ganhou ${r.win.toLocaleString("pt-BR")} moedas! 🐯`);
       }
-    }, totalTime);
+
+      // Continue auto-spin
+      if (!stopAutoRef.current && autoRemainingRef.current > 1) {
+        autoRemainingRef.current -= 1;
+        setAutoRemaining(autoRemainingRef.current);
+        // small pause between auto spins
+        setTimeout(() => {
+          if (stopAutoRef.current) return;
+          mutation.mutate(bet);
+        }, turbo ? 250 : 500);
+      } else {
+        autoRemainingRef.current = 0;
+        setAutoRemaining(0);
+      }
+    }, total);
   }
 
-  // mirror ref so the interval reads the latest array
-  const reelSpinningRef = useRef(reelSpinning);
-  useEffect(() => {
-    reelSpinningRef.current = reelSpinning;
-  }, [reelSpinning]);
+  function startAuto(count: number) {
+    if (count <= 0) return;
+    if (bet > balance) {
+      toast.error("Saldo insuficiente para a aposta");
+      return;
+    }
+    stopAutoRef.current = false;
+    autoRemainingRef.current = count;
+    setAutoRemaining(count);
+    setAutoOpen(false);
+    mutation.mutate(bet);
+  }
+  function stopAuto() {
+    stopAutoRef.current = true;
+    autoRemainingRef.current = 0;
+    setAutoRemaining(0);
+  }
 
-  useEffect(() => () => {
-    if (tickRef.current) window.clearInterval(tickRef.current);
-  }, []);
-
-  const spinning = reelSpinning.some((s) => s) || mutation.isPending;
+  const spinning = columnSpinning.some((s) => s) || mutation.isPending;
   const balance = profile?.coins ?? 0;
+  const autoActive = autoRemaining > 0;
 
   return (
     <main className="container mx-auto px-3 py-6 max-w-md">
@@ -132,33 +181,62 @@ function SlotPage() {
             <span>🏮</span>
           </div>
 
-          {/* Grade 3x3 */}
+          {/* Reels 3x3 com strip vertical */}
           <div
             className={`relative rounded-2xl p-3 bg-gradient-to-b from-amber-100 via-yellow-50 to-amber-100 border-4 border-yellow-600 overflow-hidden transition-all ${
               bonusFlash ? "animate-pulse ring-4 ring-yellow-400" : ""
             }`}
           >
-            <div className="grid grid-cols-3 gap-2">
-              {[0, 1, 2].flatMap((r) =>
-                [0, 1, 2].map((c) => {
-                  const isWin = winningCells.has(`${r}-${c}`);
-                  const isSpinning = reelSpinning[c];
-                  return (
+            <div
+              className="grid grid-cols-3 gap-2"
+              style={{ height: CELL * 3 }}
+            >
+              {[0, 1, 2].map((c) => {
+                const isSpinning = columnSpinning[c];
+                const strip = reels[c];
+                return (
+                  <div
+                    key={c}
+                    className="relative overflow-hidden rounded-xl bg-gradient-to-b from-amber-50 to-amber-100 border-2 border-yellow-700/60"
+                    style={{ height: CELL * 3 }}
+                  >
                     <div
-                      key={`${r}-${c}`}
-                      className={`aspect-square rounded-xl flex items-center justify-center text-5xl bg-gradient-to-br from-red-700 to-red-900 border-2 transition-all duration-200 ${
-                        isWin
-                          ? "border-yellow-300 shadow-[0_0_20px_rgba(250,204,21,0.9)] animate-pulse scale-105"
-                          : "border-yellow-700/60"
-                      } ${isSpinning ? "blur-[1px]" : ""}`}
+                      className="will-change-transform"
+                      style={{
+                        transform: `translateY(${offsets[c]}px)`,
+                        transition: durations[c]
+                          ? `transform ${durations[c]}ms cubic-bezier(0.25, 0.9, 0.3, 1.05)`
+                          : "none",
+                      }}
                     >
-                      <span className={isSpinning ? "animate-bounce" : ""}>
-                        {grid[r][c]}
-                      </span>
+                      {strip.map((sym, i) => {
+                        // The last 3 entries (i = strip.length-3..strip.length-1) correspond to rows 0..2
+                        const finalRow = i - (strip.length - 3);
+                        const isWinCell =
+                          !isSpinning && finalRow >= 0 && winningCells.has(`${finalRow}-${c}`);
+                        return (
+                          <div
+                            key={i}
+                            className={`flex items-center justify-center text-5xl ${
+                              isSpinning ? "blur-[2px]" : ""
+                            } ${
+                              isWinCell
+                                ? "bg-yellow-300/60 ring-2 ring-yellow-500 rounded-lg animate-pulse"
+                                : ""
+                            }`}
+                            style={{ height: CELL }}
+                          >
+                            {sym}
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                }),
-              )}
+                    {/* Top/bottom shadow gradient for depth */}
+                    <div className="pointer-events-none absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-black/30 to-transparent" />
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-4 bg-gradient-to-t from-black/30 to-transparent" />
+                  </div>
+                );
+              })}
             </div>
 
             {bonusFlash && (
@@ -211,7 +289,7 @@ function SlotPage() {
           <button
             key={b}
             onClick={() => setBet(b)}
-            disabled={spinning}
+            disabled={spinning || autoActive}
             className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 transition ${
               bet === b
                 ? "bg-yellow-400 border-yellow-300 text-red-900"
@@ -223,22 +301,46 @@ function SlotPage() {
         ))}
         <button
           onClick={() => setBet(Math.max(10, Math.min(100000, balance)))}
-          disabled={spinning}
+          disabled={spinning || autoActive}
           className="px-3 py-1.5 rounded-full text-xs font-bold border-2 border-yellow-700/60 text-yellow-200 hover:border-yellow-400"
         >
           MAX
         </button>
       </div>
 
-      <Button
-        onClick={() => mutation.mutate(bet)}
-        disabled={spinning || bet > balance}
-        size="lg"
-        className="w-full mt-4 h-14 text-lg font-black bg-gradient-to-b from-yellow-300 via-yellow-500 to-amber-700 text-red-950 border-2 border-yellow-300 shadow-lg hover:scale-[1.02] transition"
-      >
-        <Coins className="w-5 h-5 mr-2" />
-        {spinning ? "GIRANDO..." : `GIRAR (${bet})`}
-      </Button>
+      <div className="mt-4 flex gap-2">
+        <Button
+          onClick={() => mutation.mutate(bet)}
+          disabled={spinning || bet > balance || autoActive}
+          size="lg"
+          className="flex-1 h-14 text-lg font-black bg-gradient-to-b from-yellow-300 via-yellow-500 to-amber-700 text-red-950 border-2 border-yellow-300 shadow-lg hover:scale-[1.02] transition"
+        >
+          <Coins className="w-5 h-5 mr-2" />
+          {spinning ? "GIRANDO..." : `GIRAR (${bet})`}
+        </Button>
+        {autoActive ? (
+          <Button
+            onClick={stopAuto}
+            size="lg"
+            variant="destructive"
+            className="h-14 px-4 font-bold"
+          >
+            <X className="w-5 h-5 mr-1" />
+            PARAR ({autoRemaining})
+          </Button>
+        ) : (
+          <Button
+            onClick={() => setAutoOpen(true)}
+            disabled={spinning || bet > balance}
+            size="lg"
+            variant="outline"
+            className="h-14 px-4 font-bold border-2 border-yellow-500 text-yellow-300 hover:bg-yellow-500/10"
+          >
+            <Play className="w-5 h-5 mr-1" />
+            AUTO
+          </Button>
+        )}
+      </div>
 
       {/* Pay table */}
       <div className="mt-6 p-4 rounded-2xl bg-card border border-border">
@@ -257,6 +359,38 @@ function SlotPage() {
           🐯 substitui qualquer símbolo · 2 🐯 = bônus x2 · 3 = x3 · 4 = x5 · 5+ = x10
         </p>
       </div>
+
+      {/* Auto-spin modal */}
+      <Dialog open={autoOpen} onOpenChange={setAutoOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center">Rodada automática</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground text-center">
+            Nº de rodadas automáticas
+          </p>
+          <div className="grid grid-cols-5 gap-2 mt-2">
+            {[10, 30, 50, 80, 100].map((n) => (
+              <button
+                key={n}
+                onClick={() => startAuto(n)}
+                className="rounded-lg border-2 border-yellow-500/60 py-2 text-sm font-bold text-yellow-400 hover:bg-yellow-500/10 transition"
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+          <Button
+            onClick={() => startAuto(1000)}
+            className="w-full mt-3 bg-gradient-to-b from-yellow-300 via-yellow-500 to-amber-700 text-red-950 font-black h-12"
+          >
+            Começar 1000 rodadas
+          </Button>
+          <p className="text-[10px] text-center text-muted-foreground mt-2">
+            Aposta atual: {bet.toLocaleString("pt-BR")} moedas · Para cancelar use o botão PARAR.
+          </p>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
