@@ -43,35 +43,103 @@ export const claimDailyBonus = createServerFn({ method: "POST" })
     return { amount, balance };
   });
 
-// Slot machine: server-authoritative spin
-const SLOT_SYMBOLS = ["🍒", "🍋", "🔔", "⭐", "💎", "7️⃣"];
+// Fortune Tiger-style 3x3 slot
+// Symbols: TIGER is WILD (substitutes any), BAG is the scatter/bonus trigger
+const SLOT_SYMBOLS = ["🍊", "🪙", "🏮", "🧧", "💰", "🐯"] as const;
+const SLOT_WEIGHTS = [22, 20, 16, 12, 8, 4]; // rarer = tiger
 const SLOT_PAYOUT: Record<string, number> = {
-  "🍒": 3, "🍋": 5, "🔔": 8, "⭐": 15, "💎": 30, "7️⃣": 50,
+  "🍊": 2,
+  "🪙": 3,
+  "🏮": 5,
+  "🧧": 10,
+  "💰": 25,
+  "🐯": 50,
 };
+
+function pickWeighted(): string {
+  const total = SLOT_WEIGHTS.reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < SLOT_SYMBOLS.length; i++) {
+    r -= SLOT_WEIGHTS[i];
+    if (r <= 0) return SLOT_SYMBOLS[i];
+  }
+  return SLOT_SYMBOLS[0];
+}
+
+// 8 paylines on a 3x3 grid: 3 rows, 3 columns, 2 diagonals
+// Each entry is 3 [row,col] cells
+const PAYLINES: Array<Array<[number, number]>> = [
+  [[0, 0], [0, 1], [0, 2]],
+  [[1, 0], [1, 1], [1, 2]],
+  [[2, 0], [2, 1], [2, 2]],
+  [[0, 0], [1, 0], [2, 0]],
+  [[0, 1], [1, 1], [2, 1]],
+  [[0, 2], [1, 2], [2, 2]],
+  [[0, 0], [1, 1], [2, 2]],
+  [[0, 2], [1, 1], [2, 0]],
+];
+
+function evaluateGrid(grid: string[][], bet: number) {
+  const wins: Array<{ line: number; symbol: string; payout: number; cells: [number, number][] }> = [];
+  PAYLINES.forEach((line, idx) => {
+    const symbols = line.map(([r, c]) => grid[r][c]);
+    // Determine effective symbol (wilds substitute)
+    const nonWild = symbols.filter((s) => s !== "🐯");
+    let matchSymbol: string | null = null;
+    if (nonWild.length === 0) {
+      matchSymbol = "🐯";
+    } else if (nonWild.every((s) => s === nonWild[0])) {
+      matchSymbol = nonWild[0];
+    }
+    if (matchSymbol) {
+      const allWild = symbols.every((s) => s === "🐯");
+      const baseMult = SLOT_PAYOUT[matchSymbol] ?? 0;
+      const mult = allWild ? SLOT_PAYOUT["🐯"] * 2 : baseMult;
+      wins.push({
+        line: idx,
+        symbol: matchSymbol,
+        payout: Math.floor((bet / 8) * mult),
+        cells: line,
+      });
+    }
+  });
+  return wins;
+}
 
 export const spinSlot = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ bet: z.number().int().min(10).max(5000) }).parse(data))
+  .inputValidator((data) =>
+    z.object({ bet: z.number().int().min(10).max(100000) }).parse(data),
+  )
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { bet } = data;
     await adjustCoins(userId, -bet, "slot_bet", "slot");
-    const reels = [
-      SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)],
-      SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)],
-      SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)],
+
+    const grid: string[][] = [
+      [pickWeighted(), pickWeighted(), pickWeighted()],
+      [pickWeighted(), pickWeighted(), pickWeighted()],
+      [pickWeighted(), pickWeighted(), pickWeighted()],
     ];
-    let win = 0;
-    if (reels[0] === reels[1] && reels[1] === reels[2]) {
-      win = bet * SLOT_PAYOUT[reels[0]];
-    } else if (reels[0] === reels[1] || reels[1] === reels[2]) {
-      win = Math.floor(bet * 1.5);
-    }
+
+    const wins = evaluateGrid(grid, bet);
+    let totalWin = wins.reduce((a, w) => a + w.payout, 0);
+
+    // Bonus: count tigers on screen => triggers Fortune bonus multiplier
+    const tigerCount = grid.flat().filter((s) => s === "🐯").length;
+    let bonusMultiplier = 1;
+    if (tigerCount >= 5) bonusMultiplier = 10;
+    else if (tigerCount === 4) bonusMultiplier = 5;
+    else if (tigerCount === 3) bonusMultiplier = 3;
+    else if (tigerCount === 2) bonusMultiplier = 2;
+    const bonusTriggered = bonusMultiplier > 1;
+    totalWin = totalWin * bonusMultiplier;
+
     let balance = (await getProfile(userId)).coins as number;
-    if (win > 0) {
-      balance = await adjustCoins(userId, win, "slot_win", "slot", { reels });
+    if (totalWin > 0) {
+      balance = await adjustCoins(userId, totalWin, "slot_win", "slot", { grid, wins });
     }
-    return { reels, win, balance };
+    return { grid, wins, win: totalWin, bonusMultiplier, bonusTriggered, tigerCount, balance };
   });
 
 // Blackjack — server-authoritative single hand
