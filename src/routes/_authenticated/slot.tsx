@@ -348,15 +348,15 @@ function SlotPage() {
           TABELA DE PAGAMENTOS (por linha)
         </p>
         <div className="grid grid-cols-3 gap-2 text-center text-sm">
-          <div><span className="text-2xl">🐯</span> <span className="font-bold text-yellow-400">50×</span></div>
-          <div><span className="text-2xl">💰</span> <span className="font-bold">25×</span></div>
-          <div><span className="text-2xl">🧧</span> <span className="font-bold">10×</span></div>
-          <div><span className="text-2xl">🏮</span> <span className="font-bold">5×</span></div>
-          <div><span className="text-2xl">🪙</span> <span className="font-bold">3×</span></div>
-          <div><span className="text-2xl">🍊</span> <span className="font-bold">2×</span></div>
+          <div><span className="text-2xl">🐯</span> <span className="font-bold text-yellow-400">25×</span></div>
+          <div><span className="text-2xl">💰</span> <span className="font-bold">12×</span></div>
+          <div><span className="text-2xl">🧧</span> <span className="font-bold">5×</span></div>
+          <div><span className="text-2xl">🏮</span> <span className="font-bold">2.5×</span></div>
+          <div><span className="text-2xl">🪙</span> <span className="font-bold">1.5×</span></div>
+          <div><span className="text-2xl">🍊</span> <span className="font-bold">1×</span></div>
         </div>
         <p className="text-[10px] text-center text-muted-foreground mt-3">
-          🐯 substitui qualquer símbolo · 2 🐯 = bônus x2 · 3 = x3 · 4 = x5 · 5+ = x10
+          Multiplicador aplicado sobre a aposta total por linha vencedora · 🐯 substitui qualquer símbolo · 2 🐯 = bônus x2 · 3 = x3 · 4 = x5 · 5+ = x10
         </p>
       </div>
 
