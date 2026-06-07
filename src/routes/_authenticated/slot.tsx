@@ -165,7 +165,7 @@ function SlotPage() {
   return (
     <main className="container mx-auto px-3 py-6 max-w-md">
       <h1 className="text-3xl font-black text-center bg-gradient-to-b from-yellow-300 via-yellow-500 to-amber-700 bg-clip-text text-transparent drop-shadow">
-        🐯 FORTUNE TIGER 🐯
+        🐯 FORTUNE 🐯
       </h1>
       <p className="text-center text-xs text-muted-foreground mt-1">
         3 iguais em linha · 🐯 é wild · 2+ tigres = bônus
