@@ -125,7 +125,7 @@ function BlackjackPage() {
   const [hand, setHand] = useState<HandView | null>(null);
 
   // restore active hand on load
-  useQuery({
+  const profileQ = useQuery({
     queryKey: ["me"],
     queryFn: async () => {
       const p = await profileFn();
@@ -186,7 +186,7 @@ function BlackjackPage() {
 
   const inHand = !!hand && !hand.finished;
   const busy = startM.isPending || hitM.isPending || standM.isPending;
-  const balance = hand?.balance ?? 0;
+  const balance = hand?.balance ?? (profileQ.data?.coins as number ?? 0);
 
   return (
     <main className="container mx-auto px-4 py-6 max-w-3xl">
