@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/slot")({
-  head: () => ({ meta: [{ title: "Fortune Tiger — Luxe Casino" }] }),
+  head: () => ({ meta: [{ title: "Fortune — Luxe Casino" }] }),
   component: SlotPage,
 });
 
