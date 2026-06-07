@@ -48,12 +48,14 @@ export const claimDailyBonus = createServerFn({ method: "POST" })
 const SLOT_SYMBOLS = ["🍊", "🪙", "🏮", "🧧", "💰", "🐯"] as const;
 const SLOT_WEIGHTS = [22, 20, 16, 12, 8, 4]; // rarer = tiger
 const SLOT_PAYOUT: Record<string, number> = {
-  "🍊": 2,
-  "🪙": 3,
-  "🏮": 5,
-  "🧧": 10,
-  "💰": 25,
-  "🐯": 50,
+  // Multipliers applied directly to the total bet for a winning line.
+  // Smallest line always returns at least the bet so a "win" is never a net loss.
+  "🍊": 1,
+  "🪙": 1.5,
+  "🏮": 2.5,
+  "🧧": 5,
+  "💰": 12,
+  "🐯": 25,
 };
 
 function pickWeighted(): string {
@@ -98,7 +100,7 @@ function evaluateGrid(grid: string[][], bet: number) {
       wins.push({
         line: idx,
         symbol: matchSymbol,
-        payout: Math.floor((bet / 8) * mult),
+        payout: Math.floor(bet * mult),
         cells: line,
       });
     }
